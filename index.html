@@ -1,18 +1,99 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube Playlist Viewer</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    #player {
+      margin-bottom: 20px;
+    }
+
+    #videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .video-item {
+      cursor: pointer;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .video-item:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .video-item img {
+      width: 100%;
+      border-radius: 6px;
+    }
+
+    .video-item p {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    iframe {
+      width: 100%;
+      max-width: 720px;
+      height: 405px;
+      border: none;
+      border-radius: 10px;
+      background: #000;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>再生リストビューアー</h2>
+
+<div id="player"></div>
+<div id="videos">読み込み中...</div>
+
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+
   const apiKey = "AIzaSyAxk1YpQSe-qDtFUSUmnjnduanag41Mlyk";
-  const playlistId = "https://youtube.com/playlist?list=PLExT6MVBKs2CzmEcSCpaSQP_u7XONu6kD&si=dcUxOyDuZEUAJz8N"; // ←ここ変更
+  const playlistId = "PLExT6MVBKs2CzmEcSCpaSQP_u7XONu6kD";
+
   const container = document.getElementById("videos");
   const player = document.getElementById("player");
 
   async function fetchAllVideos(pageToken = "", allItems = []) {
-    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${apiKey}&pageToken=${pageToken}`;
+    const url =
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${apiKey}&pageToken=${pageToken}`;
+
     const res = await fetch(url);
     const data = await res.json();
 
-    if (!res.ok) throw new Error(data.error?.message || "API fetch error");
+    if (!res.ok) {
+      throw new Error(data.error?.message || "API fetch error");
+    }
 
     if (data.items) allItems = allItems.concat(data.items);
-    if (data.nextPageToken) return fetchAllVideos(data.nextPageToken, allItems);
+
+    if (data.nextPageToken) {
+      return fetchAllVideos(data.nextPageToken, allItems);
+    }
+
     return allItems;
   }
 
@@ -22,18 +103,20 @@
 
       items.forEach(item => {
         const title = item.snippet.title;
-        const videoId = item.snippet.resourceId?.videoId || "";
+        const videoId = item.snippet.resourceId?.videoId;
+
         if (!videoId) return;
 
-        const thumbnail = item.snippet.thumbnails?.medium?.url || 
-                          item.snippet.thumbnails?.default?.url || 
-                          "";
+        const thumbnail =
+          item.snippet.thumbnails?.medium?.url ||
+          item.snippet.thumbnails?.default?.url ||
+          "";
 
         const div = document.createElement("div");
         div.className = "video-item";
 
         div.innerHTML = `
-          <img src="${thumbnail}" alt="${title}" />
+          <img src="${thumbnail}" alt="">
           <p>${title}</p>
         `;
 
@@ -42,17 +125,28 @@
             <iframe
               src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1"
               allow="autoplay; encrypted-media"
-              allowfullscreen
-            ></iframe>
+              allowfullscreen>
+            </iframe>
           `;
-          window.scrollTo({top:0,behavior:'smooth'});
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
         };
 
         container.appendChild(div);
       });
     })
     .catch(err => {
-      container.innerText = "APIエラーが発生しました: " + err.message;
       console.error(err);
+      container.innerText =
+        "エラー: APIキー制限 or クォータ or IDミスの可能性";
     });
+
+});
 </script>
+
+</body>
+</html>
+```
